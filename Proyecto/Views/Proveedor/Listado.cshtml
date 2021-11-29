@@ -1,0 +1,47 @@
+﻿@model IEnumerable<Proyecto.Models.Proveedor>
+
+@{
+    ViewBag.Title = "Listado";
+    Layout = "~/Views/Shared/_Listado.cshtml";
+}
+
+<br />
+<h2>Listado Proveedor</h2>
+
+<br />
+<br />
+<table class="table">
+    <tr>
+        <th>
+            Nombre
+        </th>
+        <th>
+            CUIT
+        </th>
+        <th>
+            Telefono
+        </th>
+        <th>
+            Correo Electrónico
+        </th>
+    </tr>
+
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.nombre)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.cuit)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.telefono)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.correo)
+            </td>
+        </tr>
+    }
+
+</table>

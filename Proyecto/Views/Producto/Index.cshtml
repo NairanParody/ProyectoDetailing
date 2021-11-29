@@ -1,0 +1,216 @@
+﻿
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="row m-4">
+    <div class="col-sm-12">
+        <div class="card">
+            <div class="card-header">
+                <form action="@Url.Content("~/Producto/Imprimir")" class="p-2">
+                    <div class="col-sm-2 text-justify float-right">
+                        <button class="btn btn-primary btn-block" type="submit" onclick="">Imprimir</button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-body">
+                <table class="display responsive nowrap" id="myTable" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Marca</th>
+                            <th>Descripcion</th>
+                            <th>Precio</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Modal -->
+<div class="modal fade" id="FormModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Proveedor</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <input type="hidden" id="txtIdProducto" />
+                        <div class="form-group">
+                            <label for="txtNombre">Nombre:</label>
+                            <input type="text" class="form-control" required="" id="txtNombre">
+                        </div>
+                        <div class="form-group">
+                            <label for="txtMarca">Marca:</label>
+                            <input type="text" class="form-control" required="" id="txtMarca">
+                        </div>
+                        <div class="form-group">
+                            <label for="txtDescripcion">Descripcion:</label>
+                            <input type="text" class="form-control" required="" id="txtDescripcion">
+                        </div>
+                        <div class="form-group">
+                            <label for="txtPrecio">Precio:</label>
+                            <input type="text" class="form-control" required="" id="txtPrecio">
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="Guardar()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts{
+
+    <script>
+        var tabla_producto;
+        $(document).ready(function () {
+             tabla_producto = $('#myTable').DataTable({
+                "ajax": {
+                    "url": "@Url.Action("Listar", "Producto")",
+                    "type": "GET",
+                    "datatype": "json"
+                },
+                 "columns": [
+                    { "data": "nombre" },
+                    { "data": "marca" },
+                    { "data": "descripcion" },
+                    { "data": "precio" },
+                    { "data": "id_producto", "render": function (data) {
+                            return "<button class='btn btn-primary btn-sm' type='button' onclick='abrirModal(" + data + ")'><i class='fas fa-pen'></i></button>" +
+                                "<button class='btn btn-danger btn-sm ml-2' type='button' onclick='Eliminar(" + data + ")'><i class='fa fa-trash'></i></button>"
+                        },
+                        "orderable": false,
+                        "searchable": false,
+                        "width": "150px"
+                    }
+                ],
+                dom: 'Bfrtip',
+                buttons: [
+                    {
+                        text: 'Agregar Nuevo',
+                        attr: { class: 'btn btn-success btn-sm' },
+                        action: function (e, dt, node, config) {
+                            abrirModal(0)
+                        }
+                    }
+                 ],
+                 "language": {
+                     "url": "@Url.Content("~/Content/datatable/idioma/datatable.es-ES.json")"
+                 }
+
+            });
+        });
+
+
+        function abrirModal($idproducto) {
+
+            $("#txtIdProducto").val($idproducto);
+            if ($idproducto != 0) {
+
+                jQuery.ajax({
+                    url: "@Url.Action("Obtener","Producto")" + "?idproducto=" + $idproducto,
+                    type: "GET",
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
+                    success: function (data) {
+
+                        if (data != null) {
+
+                            $("#txtNombre").val(data.nombre);
+                            $("#txtMarca").val(data.marca);
+                            $("#txtDescripcion").val(data.descripcion);
+                            $("#txtPrecio").val(data.precio);
+                        }
+
+                    }
+                });
+            } else {
+
+                $("#txtNombre").val("");
+                $("#txtMarca").val("");
+                $("#txtDescripcion").val("");
+                $("#txtPrecio").val("");
+            }
+
+            $('#FormModal').modal('show');
+
+        }
+
+        function Guardar() {
+            var $data = {
+                producto: {
+                    id_producto: parseInt($("#txtIdProducto").val()),
+                    nombre: $("#txtNombre").val(),
+                    marca: $("#txtMarca").val(),
+                    descripcion: $("#txtDescripcion").val(),
+                    precio: parseFloat($("#txtPrecio").val()),
+                }
+            }
+
+            jQuery.ajax({
+                url: "@Url.Action("Guardar", "Producto")",
+                type: "POST",
+                data: JSON.stringify($data),
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                success: function (data) {
+
+                    if (data.resultado) {
+                        tabla_producto.ajax.reload();
+                        $('#FormModal').modal('hide');
+                    } else {
+                        alert("No se pudo guardar los cambios");
+                    }
+                },
+                error: function (error) {
+                    console.log(error)
+                },
+                beforeSend: function () {
+
+                }
+            });
+
+        }
+
+        function Eliminar($idproducto) {
+            if (confirm("¿Realmente desea eliminar?")) {
+
+                jQuery.ajax({
+                    url: "@Url.Action("Eliminar", "Producto")" + "?idproducto=" + $idproducto,
+                    type: "GET",
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
+                    success: function (data) {
+
+                        if (data.resultado) {
+                            tabla_producto.ajax.reload();
+                        }
+                    }
+                });
+
+
+            }
+        }
+
+    </script>
+
+
+
+}

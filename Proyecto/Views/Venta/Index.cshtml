@@ -1,0 +1,217 @@
+﻿
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="row m-4">
+    <div class="col-sm-12">
+        <div class="card">
+            <div class="card-header">
+                <form action="@Url.Content("~/Venta/Imprimir")" class="p-2">
+                    <div class="col-sm-2 text-justify float-right">
+                        <button class="btn btn-primary btn-block" type="submit" onclick="">Imprimir</button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-body">
+                <table class="display responsive nowrap" id="myTable" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>Tipo de Cliente</th>
+                            <th>Fecha</th>
+                            <th>Tipo de Pago</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Modal -->
+<div class="modal fade" id="FormModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Venta</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <input type="hidden" id="txtIdVenta" />
+                        <div class="form-group">
+                            <label for="txtCliente">Tipo de Cliente:</label>
+                            <select class="form-control form-control-sm model" id="txtCliente" name="Cliente">
+                                <option value="Consumidor Final">Consumidor Final</option>
+                                <option value="Monotributo">Monotributo</option>
+                                <option value="Responsable Inscripto">Responsable Inscripto</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="txtFecha">Fecha:</label>
+                            <input type="date" class="form-control" id="txtFecha">
+                        </div>
+                        <div class="form-group">
+                            <label for="txtPago">Tipo de Pago:</label>
+                            <select class="form-control form-control-sm model" id="txtPago" name="Cliente">
+                                <option value="Tarjeta Debito">Tarjeta Debito</option>
+                                <option value="Tarjeta Credito">Tarjeta Credito</option>
+                                <option value="Efectivo">Efectivo</option>
+                                <option value="Cheque">Cheque</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="Guardar()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts{
+
+    <script>
+        var tabla_venta;
+         $(document).ready( function () {
+             tabla_venta = $('#myTable').DataTable({
+                "ajax": {
+                    "url": "@Url.Action("Listar", "Venta")",
+                    "type": "GET",
+                    "datatype": "json"
+                },
+                 "columns": [
+                    { "data": "tipo_cliente" },
+                    { "data": "fecha" },
+                    { "data": "tipo_pago" },
+                    { "data": "id_venta", "render": function (data) {
+                            return "<button class='btn btn-primary btn-sm' type='button' onclick='abrirModal(" + data + ")'><i class='fas fa-pen'></i></button>" +
+                                "<button class='btn btn-danger btn-sm ml-2' type='button' onclick='Eliminar(" + data + ")'><i class='fa fa-trash'></i></button>"
+                        },
+                        "orderable": false,
+                        "searchable": false,
+                        "width": "150px"
+                    }
+                ],
+                dom: 'Bfrtip',
+                buttons: [
+                    {
+                        text: 'Agregar Nuevo',
+                        attr: { class: 'btn btn-success btn-sm' },
+                        action: function (e, dt, node, config) {
+                            abrirModal(0)
+                        }
+                    }
+                 ],
+                 "language": {
+                     "url": "@Url.Content("~/Content/datatable/idioma/datatable.es-ES.json")"
+                 }
+
+            });
+        });
+
+
+        function abrirModal($idventa) {
+
+            $("#txtIdVenta").val($idventa);
+            if ($idventa != 0) {
+
+                jQuery.ajax({
+                    url: "@Url.Action("Obtener", "Venta")" + "?idventa=" + $idventa,
+                    type: "GET",
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
+                    success: function (data) {
+
+                        if (data != null) {
+
+                            $("#txtCliente").val(data.tipo_cliente);
+                            $("#txtFecha").val(data.fecha);
+                            $("#txtPago").val(data.tipo_pago);
+                        }
+
+                    }
+                });
+            } else {
+
+                $("#txtCliente").val("");
+                $("#txtFecha").val("");
+                $("#txtPago").val("");
+            }
+
+            $('#FormModal').modal('show');
+
+        }
+
+        function Guardar() {
+            var $data = {
+                venta: {
+                    id_venta: parseInt($("#txtIdVenta").val()),
+                    tipo_cliente: $("#txtCliente").val(),
+                    fecha: $("#txtFecha").val(),
+                    tipo_pago: $("#txtPago").val(),
+                }
+            }
+
+            jQuery.ajax({
+                url: "@Url.Action("Guardar", "Venta")",
+                type: "POST",
+                data: JSON.stringify($data),
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                success: function (data) {
+
+                    if (data.resultado) {
+                        tabla_venta.ajax.reload();
+                        $('#FormModal').modal('hide');
+                    } else {
+                        alert("No se pudo guardar los cambios");
+                    }
+                },
+                error: function (error) {
+                    console.log(error)
+                },
+                beforeSend: function () {
+
+                }
+            });
+
+        }
+
+        function Eliminar($idventa) {
+            if (confirm("¿Realmente desea eliminar?")) {
+
+                jQuery.ajax({
+                    url: "@Url.Action("Eliminar", "Venta")" + "?idventa=" + $idventa,
+                    type: "GET",
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
+                    success: function (data) {
+
+                        if (data.resultado) {
+                            tabla_venta.ajax.reload();
+                        }
+                    }
+                });
+
+
+            }
+        }
+
+    </script>
+
+
+
+}
+

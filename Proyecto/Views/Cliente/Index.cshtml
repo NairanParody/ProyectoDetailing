@@ -1,0 +1,225 @@
+﻿
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="row m-4">
+    <div class="col-sm-12">
+        <div class="card">
+            <div class="card-header">
+                <form action="@Url.Content("~/Cliente/Imprimir")" class="p-2">
+                    <div class="col-sm-2 text-justify float-right">
+                        <button class="btn btn-primary btn-block" type="submit" onclick="">Imprimir</button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-body">
+                <table class="display responsive nowrap" id="myTable" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>DNI</th>
+                            <th>Nombre</th>
+                            <th>Direccion</th>
+                            <th>Telefono</th>
+                            <th>Correo</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Modal -->
+<div class="modal fade" id="FormModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Cliente</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <input type="hidden" id="txtIdCliente" />
+                        <div class="form-group">
+                            <label for="txtDNI">DNI:</label>
+                            <input type="text" class="form-control" required="" id="txtDNI">
+                        </div>
+                        <div class="form-group">
+                            <label for="txtNombre">Nombre:</label>
+                            <input type="text" class="form-control" required="" id="txtNombre">
+                        </div>
+                        <div class="form-group">
+                            <label for="txtDireccion">Direccion:</label>
+                            <input type="text" class="form-control" required="" id="txtDireccion">
+                        </div>
+                        <div class="form-group">
+                            <label for="txtTelefono">Telefono:</label>
+                            <input type="text" class="form-control"  required="" id="txtTelefono">
+                        </div>
+                        <div class="form-group">
+                            <label for="txtCorreo">Correo:</label>
+                            <input type="text" class="form-control" required="" id="txtCorreo">
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="Guardar()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts{
+
+    <script>
+        var tabla_cliente;
+         $(document).ready( function () {
+             tabla_cliente = $('#myTable').DataTable({
+                "ajax": {
+                    "url": "@Url.Action("Listar", "Cliente")",
+                    "type": "GET",
+                    "datatype": "json"
+                },
+                 "columns": [
+                    { "data": "dni" },
+                    { "data": "nombre" },
+                    { "data": "direccion" },
+                    { "data": "telefono" },
+                    { "data": "correo" },
+                    { "data": "id_cliente", "render": function (data) {
+                            return "<button class='btn btn-primary btn-sm' type='button' onclick='abrirModal(" + data + ")'><i class='fas fa-pen'></i></button>" +
+                                "<button class='btn btn-danger btn-sm ml-2' type='button' onclick='Eliminar(" + data + ")'><i class='fa fa-trash'></i></button>"
+                        },
+                        "orderable": false,
+                        "searchable": false,
+                        "width": "150px"
+                    }
+                ],
+                dom: 'Bfrtip',
+                buttons: [
+                    {
+                        text: 'Agregar Nuevo',
+                        attr: { class: 'btn btn-success btn-sm' },
+                        action: function (e, dt, node, config) {
+                            abrirModal(0)
+                        }
+                    }
+                 ],
+                 "language": {
+                     "url": "@Url.Content("~/Content/datatable/idioma/datatable.es-ES.json")"
+                 }
+
+            });
+        });
+
+
+        function abrirModal($idcliente) {
+
+            $("#txtIdCliente").val($idcliente);
+            if ($idcliente != 0) {
+
+                jQuery.ajax({
+                    url: "@Url.Action("Obtener","Cliente")" + "?idcliente=" + $idcliente,
+                    type: "GET",
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
+                    success: function (data) {
+
+                        if (data != null) {
+
+                            $("#txtDNI").val(data.dni);
+                            $("#txtNombre").val(data.nombre);
+                            $("#txtDireccion").val(data.direccion);
+                            $("#txtTelefono").val(data.telefono);
+                            $("#txtCorreo").val(data.correo);
+                        }
+
+                    }
+                });
+            } else {
+
+                $("#txtDNI").val("");
+                $("#txtNombre").val("");
+                $("#txtDireccion").val("");
+                $("#txtTelefono").val("");
+                $("#txtCorreo").val("");
+            }
+
+            $('#FormModal').modal('show');
+
+        }
+
+        function Guardar() {
+            var $data = {
+                cliente: {
+                    id_cliente: parseInt($("#txtIdCliente").val()),
+                    dni: parseInt($("#txtDNI").val()),
+                    nombre: $("#txtNombre").val(),
+                    direccion: $("#txtDireccion").val(),
+                    telefono: parseInt($("#txtTelefono").val()),
+                    correo: $("#txtCorreo").val(),
+                }
+            }
+
+            jQuery.ajax({
+                url: "@Url.Action("Guardar", "Cliente")",
+                type: "POST",
+                data: JSON.stringify($data),
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                success: function (data) {
+
+                    if (data.resultado) {
+                        tabla_cliente.ajax.reload();
+                        $('#FormModal').modal('hide');
+                    } else {
+                        alert("No se pudo guardar los cambios");
+                    }
+                },
+                error: function (error) {
+                    console.log(error)
+                },
+                beforeSend: function () {
+
+                }
+            });
+
+        }
+
+        function Eliminar($idcliente) {
+            if (confirm("¿Realmente desea eliminar?")) {
+
+                jQuery.ajax({
+                    url: "@Url.Action("Eliminar", "Cliente")" + "?idcliente=" + $idcliente,
+                    type: "GET",
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
+                    success: function (data) {
+
+                        if (data.resultado) {
+                            tabla_cliente.ajax.reload();
+                        }
+                    }
+                });
+
+
+            }
+        }
+
+    </script>
+
+
+
+}
